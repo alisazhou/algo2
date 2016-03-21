@@ -9,8 +9,8 @@ class HamNodes(object):
         with open(txt) as f:
             _, self.nbits = tuple(int(i) for i in f.readline().strip().split(" "))
             for raw_str in f.readlines():
-                bit_str = "".join(raw_str.strip().split(" "))
-                self.nodes.add(bit_str)
+                node_int = int("".join(raw_str.strip().split(" ")), 2)
+                self.nodes.add(node_int)
         self.nodes = list(self.nodes)
         self.nodes.sort()
         self.leader = defaultdict(int)
@@ -37,47 +37,36 @@ class HamNodes(object):
         count_time = 0
         k = len(self.nodes)
         while self.nodes:
-            n = self.nodes.pop()
-
             count_time += 1
             if not count_time % 100:
-                print("----time: {}----".format(time.time() - start_time))
-
-            int_n = int(n, 2)
-            leader_n = self.leader[int_n]
+                print("{} time: {}".format(count_time, time.time() - start_time))
+            int_n = self.nodes.pop()
+            leader_n = self.__find_leader(int_n)
             if not leader_n:
                 leader_n = int_n
                 self.leader[int_n] = int_n
-            count = 0
-            for i, j in combinations_with_replacement(range(self.nbits), 2):
-                count += 1
-                if n[i] == "0":
-                    # only look at smaller nodes
-                    continue
-                else:
-                    diff = "0"
 
+            for i, j in combinations_with_replacement(range(self.nbits), 2):
                 if i == j:
-                    neighbor = n[:i] + diff + n[i + 1:]
+                    neighbor = int_n ^ (1 << i)
                 else:
-                    if n[j] == "0":
-                        diff2 = "1"
-                    else:
-                        diff2 = "0"
-                    neighbor = n[:i] + diff + n[i + 1:j] + diff2 + n[j + 1:]
+                    neighbor = int_n ^ ((1 << i) | (1 << j))
+                if neighbor >= int_n:
+                    continue
+
                 if neighbor in self.nodes:
-                    int_nei = int(neighbor, 2)
-                    leader_nei = self.__find_leader(int_nei)
+                    leader_nei = self.__find_leader(neighbor)
 
                     if leader_nei != leader_n:
                         k -= 1
                         self.leader[leader_n] = leader_nei
                         leader_n = leader_nei
 
-
         return k
 
-
+if __name__ == "__main__":
+    g = HamNodes("ass22.txt")
+    g.k_clusters()
 
 
 
