@@ -1,31 +1,21 @@
 from itertools import combinations_with_replacement
-from collections import defaultdict
-import time
 
 class HamNodes(object):
 
     def __init__(self, txt):
-        self.nodes = set()
+        self.clusters = {}
         with open(txt) as f:
             _, self.nbits = tuple(int(i) for i in f.readline().strip().split(" "))
             for raw_str in f.readlines():
                 node_int = int("".join(raw_str.strip().split(" ")), 2)
-                self.nodes.add(node_int)
-        self.nodes = list(self.nodes)
-        self.nodes.sort()
-        self.leader = defaultdict(int)
+                self.clusters[node_int] = node_int
 
     def __find_leader(self, node):
         orig_node = node
         while True:
-            parent = self.leader[node]
-            if not parent:
-                self.leader[node] = node
-                parent = node
-                self.leader[orig_node] = parent
-                break
-            elif parent == node:
-                self.leader[orig_node] = parent
+            parent = self.clusters[node]
+            if parent == node:
+                self.clusters[orig_node] = parent
                 break
             else:
                 node = parent
@@ -33,33 +23,27 @@ class HamNodes(object):
 
 
     def k_clusters(self):
-        start_time = time.time()
-        count_time = 0
-        k = len(self.nodes)
-        while self.nodes:
-            count_time += 1
-            if not count_time % 100:
-                print("{} time: {}".format(count_time, time.time() - start_time))
-            int_n = self.nodes.pop()
+        checked_neighbors = {}
+        nodes = list(self.clusters.keys())
+        k = len(nodes)
+        while nodes:
+            int_n = nodes.pop()
             leader_n = self.__find_leader(int_n)
-            if not leader_n:
-                leader_n = int_n
-                self.leader[int_n] = int_n
 
             for i, j in combinations_with_replacement(range(self.nbits), 2):
                 if i == j:
                     neighbor = int_n ^ (1 << i)
                 else:
                     neighbor = int_n ^ ((1 << i) | (1 << j))
-                if neighbor >= int_n:
+                if neighbor >= int_n or neighbor not in self.clusters:
                     continue
 
-                if neighbor in self.nodes:
+                elif neighbor in self.clusters:
                     leader_nei = self.__find_leader(neighbor)
 
                     if leader_nei != leader_n:
                         k -= 1
-                        self.leader[leader_n] = leader_nei
+                        self.clusters[leader_n] = leader_nei
                         leader_n = leader_nei
 
         return k
