@@ -55,8 +55,6 @@ def k_cluster(k, graph):
         spacing, n1, n2 = heapq.heappop(graph.edges)
         cluster1 = graph.clusters[n1]
         cluster2 = graph.clusters[n2]
-
-        print("spacing: {}, n1: {} in cluster {}, n2 {} in cluster {}".format(spacing, n1, cluster1, n2, cluster2))
         if not (cluster1 and cluster2):
             # at least one node is in its own cluster
             break
